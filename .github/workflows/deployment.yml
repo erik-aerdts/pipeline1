@@ -21,7 +21,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/thedatabaseme/hello-world
+          images: erikaerdts/hello-world
           flavor: latest=true
           tags: |
             type=ref,event=branch
