@@ -1,56 +1,46 @@
-name: Development
+name: Deploy Hello World
 
 on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*-hello-world"
   pull_request:
-    types:
-      - opened
-      - edited
-      - synchronize
-      - reopened
-  workflow_call:
+    branches:
+      - 'master'
 
 jobs:
-  test:
-    name: Test application
+  deploy-docker-hello-world:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+
     steps:
-      - name: "☁️ checkout repository"
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: "🔧 setup node"
-        uses: actions/setup-node@v2.1.5
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
         with:
-          node-version: 16
+          images: ghcr.io/thedatabaseme/hello-world
+          flavor: latest=true
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
 
-      - name: "🔧 install npm@latest"
-        run: npm i -g npm@latest
-
-      - name: "📦 install dependencies"
-        uses: bahmutov/npm-install@v1
-
-      - name: "🔍 run tests"
-        run: npm run test --if-present
-
-  lint:
-    name: Code standards
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: "☁️ checkout repository"
-        uses: actions/checkout@v2
-
-      - name: "🔧 setup node"
-        uses: actions/setup-node@v2.1.5
+      - name: Login to image repository
+        if: github.ref_type == 'tag'
+        uses: docker/login-action@v2
         with:
-          node-version: 16
+          registry: ghcr.io
+          username: ${{ secrets.DOCKERUSER }}
+          password: ${{ secrets.DOCKERPW }}
 
-      - name: "🔧 install npm@latest"
-        run: npm i -g npm@latest
-
-      - name: "📦 install dependencies"
-        uses: bahmutov/npm-install@v1
-
-      - name: "🔍 lint code"
-        run: npm run lint --if-present
-Footer
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: docker/dockerfile/hello-world/Dockerfile
+          push: ${{ github.ref_type == 'tag' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
