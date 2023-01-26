@@ -21,7 +21,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: erikaerdts/hello-world
+          images: ghcr.io/erikaerdts/hello-world
           flavor: latest=true
           tags: |
             type=ref,event=branch
@@ -33,8 +33,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ secrets.DOCKERUSER }}
-          password: ${{ secrets.DOCKERPW }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v3
